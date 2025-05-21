@@ -3,7 +3,7 @@ import { BrowserProvider, Contract } from "ethers";
 import { FAUCET_ABI } from "./abi";
 
 const FAUCET_ADDRESS = "0xA938FfA517CD4b9f6690e9191e3AF9C4f89f4c5c";
-const PHAROS_CHAIN_ID = "0xA8748"; // 688688 decimal dalam hex
+const PHAROS_CHAIN_ID = "0x0A6A00"; // 688688 decimal dalam hex
 
 export default function App() {
   const [address, setAddress] = useState(null);
