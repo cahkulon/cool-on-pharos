@@ -3,29 +3,54 @@ import { BrowserProvider, Contract } from "ethers";
 import { FAUCET_ABI } from "./abi";
 
 const FAUCET_ADDRESS = "0xA938FfA517CD4b9f6690e9191e3AF9C4f89f4c5c";
-const PHAROS_CHAIN_ID = "0xA8230"; // 688688 decimal dalam hex
+const PHAROS_CHAIN_ID = "0xA8230"; // 688688 decimal in hex
 
 export default function App() {
   const [address, setAddress] = useState(null);
   const [status, setStatus] = useState("");
 
+  async function getProvider() {
+    if (typeof window.ethereum === "undefined") {
+      return null;
+    }
+
+    // Prioritaskan MetaMask
+    if (window.ethereum.providers?.length) {
+      const metamask = window.ethereum.providers.find(
+        (p) => p.isMetaMask
+      );
+      const okx = window.ethereum.providers.find(
+        (p) => p.isOKExWallet
+      );
+      return metamask || okx || window.ethereum;
+    }
+
+    // Jika hanya 1 provider
+    if (window.ethereum.isMetaMask || window.ethereum.isOKExWallet) {
+      return window.ethereum;
+    }
+
+    return window.ethereum;
+  }
+
   async function connectWallet() {
-    if (!window.ethereum) {
-      alert("Please install MetaMask or other injected wallet!");
+    const injected = await getProvider();
+
+    if (!injected) {
+      alert("No EVM wallet detected. Please install MetaMask, OKX Wallet, or other compatible wallet.");
       return;
     }
 
     try {
-      // Coba switch ke Pharos Testnet
-      await window.ethereum.request({
+      // Switch ke Pharos Testnet
+      await injected.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: PHAROS_CHAIN_ID }],
       });
     } catch (switchError) {
       if (switchError.code === 4902) {
-        // Jaringan belum ada, tambah jaringan baru
         try {
-          await window.ethereum.request({
+          await injected.request({
             method: "wallet_addEthereumChain",
             params: [
               {
@@ -52,8 +77,8 @@ export default function App() {
     }
 
     try {
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-      const provider = new BrowserProvider(window.ethereum);
+      await injected.request({ method: "eth_requestAccounts" });
+      const provider = new BrowserProvider(injected);
       const signer = await provider.getSigner();
       const addr = await signer.getAddress();
       setAddress(addr);
