@@ -10,47 +10,43 @@ export default function App() {
   const [status, setStatus] = useState("");
 
   async function getProvider() {
-    if (typeof window.ethereum === "undefined") {
-      return null;
-    }
-
-    // Prioritaskan MetaMask
-    if (window.ethereum.providers?.length) {
-      const metamask = window.ethereum.providers.find(
-        (p) => p.isMetaMask
-      );
-      const okx = window.ethereum.providers.find(
-        (p) => p.isOKExWallet
-      );
-      return metamask || okx || window.ethereum;
-    }
-
-    // Jika hanya 1 provider
-    if (window.ethereum.isMetaMask || window.ethereum.isOKExWallet) {
+    if (typeof window.ethereum !== "undefined") {
+      if (window.ethereum.providers?.length) {
+        const metamask = window.ethereum.providers.find(p => p.isMetaMask);
+        const okx = window.ethereum.providers.find(p => p.isOKExWallet);
+        return metamask || okx || window.ethereum;
+      }
+      if (window.ethereum.isMetaMask || window.ethereum.isOKExWallet) {
+        return window.ethereum;
+      }
       return window.ethereum;
     }
 
-    return window.ethereum;
+    // Fallback khusus OKX Wallet
+    if (typeof window.okxwallet !== "undefined" && window.okxwallet.ethereum) {
+      return window.okxwallet.ethereum;
+    }
+
+    return null;
   }
 
   async function connectWallet() {
-    const injected = await getProvider();
+    const providerObj = await getProvider();
 
-    if (!injected) {
+    if (!providerObj) {
       alert("No EVM wallet detected. Please install MetaMask, OKX Wallet, or other compatible wallet.");
       return;
     }
 
     try {
-      // Switch ke Pharos Testnet
-      await injected.request({
+      await providerObj.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: PHAROS_CHAIN_ID }],
       });
     } catch (switchError) {
       if (switchError.code === 4902) {
         try {
-          await injected.request({
+          await providerObj.request({
             method: "wallet_addEthereumChain",
             params: [
               {
@@ -67,18 +63,18 @@ export default function App() {
             ],
           });
         } catch (addError) {
-          alert("Gagal menambahkan jaringan Pharos Testnet");
+          alert("Failed to add Pharos Testnet");
           return;
         }
       } else {
-        alert("Gagal switch jaringan");
+        alert("Failed to switch network");
         return;
       }
     }
 
     try {
-      await injected.request({ method: "eth_requestAccounts" });
-      const provider = new BrowserProvider(injected);
+      await providerObj.request({ method: "eth_requestAccounts" });
+      const provider = new BrowserProvider(providerObj);
       const signer = await provider.getSigner();
       const addr = await signer.getAddress();
       setAddress(addr);
