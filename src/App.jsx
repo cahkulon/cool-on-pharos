@@ -3,7 +3,7 @@ import { BrowserProvider, Contract } from "ethers";
 import { FAUCET_ABI } from "./abi";
 
 const FAUCET_ADDRESS = "0xA938FfA517CD4b9f6690e9191e3AF9C4f89f4c5c";
-const PHAROS_CHAIN_ID = "0xA8748"; // 688688 hex
+const PHAROS_CHAIN_ID = "0xA8748"; // 688688 decimal dalam hex
 
 export default function App() {
   const [address, setAddress] = useState(null);
@@ -11,19 +11,19 @@ export default function App() {
 
   async function connectWallet() {
     if (!window.ethereum) {
-      alert("Please install MetaMask!");
+      alert("Please install MetaMask or other injected wallet!");
       return;
     }
 
     try {
-      // Minta switch ke Pharos Testnet
+      // Coba switch ke Pharos Testnet
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: PHAROS_CHAIN_ID }],
       });
     } catch (switchError) {
-      // Jika jaringan belum ada di MetaMask, tambahkan jaringan baru
       if (switchError.code === 4902) {
+        // Jaringan belum ada, tambah jaringan baru
         try {
           await window.ethereum.request({
             method: "wallet_addEthereumChain",
