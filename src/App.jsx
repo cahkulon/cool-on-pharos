@@ -3,7 +3,7 @@ import { BrowserProvider, Contract } from "ethers";
 import { FAUCET_ABI } from "./abi";
 
 const FAUCET_ADDRESS = "0xA938FfA517CD4b9f6690e9191e3AF9C4f89f4c5c";
-const PHAROS_CHAIN_ID = "0xA8230"; // 688688 decimal in hex
+const PHAROS_CHAIN_ID = "0xA8230"; // 688688 in hex
 
 export default function App() {
   const [address, setAddress] = useState(null);
@@ -11,19 +11,20 @@ export default function App() {
 
   async function getProvider() {
     if (typeof window.ethereum !== "undefined") {
+      // Prioritaskan OKX Wallet jika tersedia
       if (window.ethereum.providers?.length) {
-        const metamask = window.ethereum.providers.find(p => p.isMetaMask);
         const okx = window.ethereum.providers.find(p => p.isOKExWallet);
-        return metamask || okx || window.ethereum;
+        const metamask = window.ethereum.providers.find(p => p.isMetaMask);
+        return okx || metamask || window.ethereum;
       }
-      if (window.ethereum.isMetaMask || window.ethereum.isOKExWallet) {
+      if (window.ethereum.isOKExWallet || window.ethereum.isMetaMask) {
         return window.ethereum;
       }
       return window.ethereum;
     }
 
-    // Fallback khusus OKX Wallet
-    if (typeof window.okxwallet !== "undefined" && window.okxwallet.ethereum) {
+    // Fallback jika OKX Wallet terpisah
+    if (window.okxwallet?.ethereum) {
       return window.okxwallet.ethereum;
     }
 
@@ -34,7 +35,7 @@ export default function App() {
     const providerObj = await getProvider();
 
     if (!providerObj) {
-      alert("No EVM wallet detected. Please install MetaMask, OKX Wallet, or other compatible wallet.");
+      alert("No EVM wallet detected. Please install OKX Wallet, MetaMask, or another compatible wallet.");
       return;
     }
 
