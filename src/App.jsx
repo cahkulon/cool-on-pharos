@@ -3,39 +3,33 @@ import { BrowserProvider, Contract } from "ethers";
 import { FAUCET_ABI } from "./abi";
 
 const FAUCET_ADDRESS = "0xA938FfA517CD4b9f6690e9191e3AF9C4f89f4c5c";
-const PHAROS_CHAIN_ID = "0xA8230"; // 688688 in hex
+const PHAROS_CHAIN_ID = "0xA8230"; // 688688 decimal in hex
 
 export default function App() {
   const [address, setAddress] = useState(null);
   const [status, setStatus] = useState("");
 
-  async function getProvider() {
+  async function getOkxProvider() {
     if (typeof window.ethereum !== "undefined") {
-      // Prioritaskan OKX Wallet jika tersedia
+      // Cek jika OKX Wallet ada di window.ethereum.providers (multi-wallet)
       if (window.ethereum.providers?.length) {
         const okx = window.ethereum.providers.find(p => p.isOKExWallet);
-        const metamask = window.ethereum.providers.find(p => p.isMetaMask);
-        return okx || metamask || window.ethereum;
+        if (okx) return okx;
       }
-      if (window.ethereum.isOKExWallet || window.ethereum.isMetaMask) {
+      // Cek properti langsung di window.ethereum
+      if (window.ethereum.isOKExWallet) {
         return window.ethereum;
       }
-      return window.ethereum;
-    }
-
-    // Fallback jika OKX Wallet terpisah
-    if (window.okxwallet?.ethereum) {
-      return window.okxwallet.ethereum;
     }
 
     return null;
   }
 
   async function connectWallet() {
-    const providerObj = await getProvider();
+    const providerObj = await getOkxProvider();
 
     if (!providerObj) {
-      alert("No EVM wallet detected. Please install OKX Wallet, MetaMask, or another compatible wallet.");
+      alert("OKX Wallet not detected. Please install OKX Wallet extension.");
       return;
     }
 
@@ -80,7 +74,7 @@ export default function App() {
       const addr = await signer.getAddress();
       setAddress(addr);
       window.signer = signer;
-      setStatus("Wallet connected on Pharos Testnet");
+      setStatus("Wallet connected on Pharos Testnet (OKX Wallet)");
     } catch (e) {
       setStatus("Connection rejected");
     }
@@ -108,7 +102,7 @@ export default function App() {
       <h1>🚰 Faucet Claim</h1>
       {!address ? (
         <button onClick={connectWallet} style={{ padding: "10px 20px" }}>
-          Connect Wallet
+          Connect OKX Wallet
         </button>
       ) : (
         <>
